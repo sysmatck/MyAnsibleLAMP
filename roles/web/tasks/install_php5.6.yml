@@ -1,0 +1,24 @@
+---
+
+- name: Add repository that contains PHP 5.6 for Ubuntu
+  apt_repository:
+    repo: 'ppa:ondrej/php'
+
+- name: Install PHP 5.6 and ther useful modules
+  apt: name={{ item }} state=installed update_cache=yes
+  notify: "restart web services"
+  with_items:
+    - php5.6
+    - libapache2-mod-php5.6
+    - php5.6-curl
+    - php5.6-gd
+    - php5.6-mysql
+    - php5.6-opcache
+    - php5.6-zip
+    - php5.6-xsl
+    - php5.6-xml
+    - php5.6-mcrypt
+    - php5.6-json
+    - php5.6-intl
+    - php5.6-mbstring
+    - php5.6-soap

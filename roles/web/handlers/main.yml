@@ -1,0 +1,20 @@
+---
+# Handler for the webtier: handlers are called by other plays.
+# See http://docs.ansible.com/playbooks_intro.html for more information about handlers.
+
+#- name: restart iptables
+#  service: name=iptables state=restarted
+
+- name: restart apache
+  service: name=apache2 state=restarted
+  listen: "restart web services"
+
+- name: Adding example index page on vhost root directory
+  template: src=index.php.j2 dest=/home/{{ website_username }}/public_html/index.php
+  listen: "install index"
+
+## this portion should not be executed every time, if by any reasons it is executed more than once
+## it will generate an index.php file with lots of calls for phpinfo() and a giant bloated webpage
+- name: Replace website testing page index.php
+  shell: echo '<?php phpinfo(); ?>' > /home/{{ website_username }}/public_html/index.php
+  listen: "restart web services"

@@ -1,0 +1,9 @@
+---
+
+- import_tasks: create_website_user.yml
+- import_tasks: install_apache.yml
+- import_tasks: setup_hostname.yml
+#- import_tasks: install_php5.6.yml
+- import_tasks: install_php-default.yml
+- import_tasks: install_postfix.yml
+- import_tasks: install_certbot.yml

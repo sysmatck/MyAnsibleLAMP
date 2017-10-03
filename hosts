@@ -1,0 +1,6 @@
+[webservers]
+myserever ansible_port=22 ansible_host=8.8.8.8
+
+[dbservers]
+myserever2 ansible_port=22 ansible_host=8.8.4.4
+

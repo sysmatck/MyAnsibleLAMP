@@ -1,0 +1,52 @@
+---
+#  Install Apache (default repository version)
+
+- name: Create vhost root directory
+  file:
+    path: /home/{{ website_username }}/public_html
+    state: directory
+    owner: '{{ website_username }}'
+    group: www-data
+    mode: 0770
+
+- name: Create vhost logs directory
+  file:
+    path: /home/{{ website_username }}/log/
+    state: directory
+    owner: '{{ website_username }}'
+    group: www-data
+    mode: 0770
+
+- name: Install Apache
+  apt: name=apache2 update_cache=yes state=latest
+  notify: "install index"
+
+- ufw:
+    rule: allow
+    name: 'Apache Full'
+
+- name: Configure Apache main file
+  template: src=apache2.conf.j2 dest=/etc/apache2/apache2.conf
+  tags: apache
+  notify: restart apache
+
+- name: Enabled mod_rewrite
+  apache2_module: name=rewrite state=present
+  notify: restart apache
+
+- name: Configure Apache website vhost
+  template: src=website-vhost.conf.j2 dest=/etc/apache2/sites-available/{{ website_username }}.conf
+  tags: apache
+  notify: restart apache
+
+- name: Removing out default host configuration
+  command: a2dissite 000-default
+
+- name: Deploy website vhost
+  command: a2ensite {{ website_username }}
+  args:
+      creates: /etc/apache2/sites-enabled/{{ website_username }}.conf
+  notify: restart apache
+
+- name: Apache service state
+  service: name=apache2 state=started enabled=yes

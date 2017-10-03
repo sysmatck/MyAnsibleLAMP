@@ -1,0 +1,7 @@
+---
+
+- name: Install Postfix Mail Agent
+  apt: name={{ item }} state=installed update_cache=yes
+  with_items:
+    - postfix
+    - mailutils

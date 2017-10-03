@@ -1,0 +1,17 @@
+<VirtualHost *:{{ http_port }}>
+
+	ServerName {{ website_domain }}
+	ServerAlias www.{{ website_domain }}
+	ServerAdmin webmaster@{{ website_domain }}
+
+	DocumentRoot /home/{{ website_username }}/public_html
+	ErrorLog /home/{{ website_username }}/log/error.log
+	CustomLog /home/{{ website_username }}/log/access.log combined
+
+	<Directory /home/{{ website_username }}/public_html>
+       		Options Indexes FollowSymLinks MultiViews
+       		AllowOverride All
+       		Require all granted
+	</Directory>
+
+</VirtualHost>

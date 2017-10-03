@@ -1,0 +1,10 @@
+---
+
+- name: Add repository that contains certbot for Ubuntu
+  apt_repository:
+    repo: 'ppa:certbot/certbot'
+
+- name: Install certbot to get HTTPS certificates
+  apt: name=python-certbot-apache state=installed update_cache=yes
+
+#certbot  --apache

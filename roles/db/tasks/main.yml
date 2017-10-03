@@ -1,0 +1,67 @@
+---
+# This playbook will install mysql and create db user and give permissions.
+
+#- name: Configure SELinux to start mysql on any port
+#  seboolean: name=mysql_connect_any state=true persistent=yes
+#  when: sestatus.rc != 0
+#
+#- name: Create mysql configuration file
+#  template: src=my.cnf.j2 dest=/etc/my.cnf owner=root group=root mode=0600
+#  notify:
+#  - restart mysql
+#
+#- name: insert iptables rule
+#  lineinfile: dest=/etc/sysconfig/iptables state=present regexp="{{ mysql_port }}"
+#              insertafter="^:OUTPUT " line="-A INPUT -p tcp  --dport {{ mysql_port }} -j  ACCEPT"
+#  notify: restart iptables
+
+- name: Install MySQL package
+  apt: name={{ item }} state=installed update_cache=yes
+  with_items:
+    - mysql-server
+    - mysql-client
+    - python-mysqldb
+
+- name: Start MySQL Service
+  service: name=mysql state=started enabled=yes
+
+- name: Create Website Database
+  mysql_db: name={{ website_username }} state=present
+
+- name: Create Website DB User
+  mysql_user: name={{ website_username }} password={{ website_db_password }} priv={{ website_username }}.*:ALL host='%' state=present
+
+## we need to flush privilege after creating a user, don't know why, just refer to:
+## https://stackoverflow.com/questions/5555328/error-1396-hy000-operation-create-user-failed-for-jacklocalhost
+- name: Reload privilege tables \#1
+  command: 'mysql -ne "{{ item }}"'
+  with_items:
+    - FLUSH PRIVILEGES
+  changed_when: False
+
+## From this line and above we do the same thing mysql_secure_installation does...
+- name: Set root DB user
+  mysql_user:
+      name: root
+      password: '{{ mysql_root_password }}'
+      priv: '*.*:ALL'
+      host: '%'
+      state: present
+
+- name: Disallow root login remotely
+  command: 'mysql -ne "{{ item }}"'
+  with_items:
+    - DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1')
+  changed_when: False
+
+- name: Remove test database and access to it
+  mysql_db: name=test state=absent
+
+- name: Remove anonymous users
+  mysql_user: name='' state=absent host_all=yes
+
+- name: Reload privilege tables \#2
+  command: 'mysql -ne "{{ item }}"'
+  with_items:
+    - FLUSH PRIVILEGES
+  changed_when: False

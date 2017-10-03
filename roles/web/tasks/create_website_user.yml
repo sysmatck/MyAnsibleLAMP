@@ -1,0 +1,7 @@
+---
+
+- user:
+    name: '{{ website_username }}'
+    shell: /bin/bash
+    groups: www-data
+    append: yes
