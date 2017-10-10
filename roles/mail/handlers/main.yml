@@ -1,0 +1,3 @@
+---
+- name: stop postfix
+  service: name=sshd state=restarted
