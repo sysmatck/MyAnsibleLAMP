@@ -1,4 +1,5 @@
 ---
+#this needs to be fixed, because it is appeding another set every run
 - name: Change /etc/hosts with `website_domain` information and IP address
   shell: echo "{{ ansible_default_ipv4.address }}   {{ website_domain }} {{ domain_most_left_part }}" >> /etc/hosts
 

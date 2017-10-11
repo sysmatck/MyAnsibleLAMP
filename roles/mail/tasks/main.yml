@@ -1,10 +1,83 @@
 ---
-- name: Stop postfix
-  template: src=sshd_config.j2 dest=/etc/ssh/sshd_config
-  tags: sshd
-  notify: restart sshd
+# Requirement:  DNS MX records set for mail.mydomain.com and `mail` A record for the IP address of the mail server
+#               Cerficates set by certbot (let's encrypt) for mail.mydomain.com
+# swaks is a good idea for debugging
 
-- ufw:
-    rule: allow
-    name: Posfix...
-    state: enabled
+- name: Make sure Postfix and Dovecot are installed
+  apt: name={{ item }} state=installed update_cache=yes
+  with_items:
+    - postfix
+    - mailutils
+    - dovecot-core
+    - dovecot-imapd
+
+- name: Configure Postfix master file
+  template: src=postfix-master.cf.j2 dest=/etc/postfix/master.cf
+  tags: postfix
+  notify: stop postfix
+
+- name: Configure Postfix main file
+  template: src=postfix-main.cf.j2 dest=/etc/postfix/main.cf
+  tags: postfix
+
+- name: Adding unix user's mail configuration file
+  template: src=postfix-virtual.j2 dest=/etc/postfix/virtual
+  tags: postfix
+
+- name: Adding virtual user's mail configuration file
+  template: src=postfix-vmailbox.j2 dest=/etc/postfix/vmailbox
+  tags: postfix
+
+- name: Backup the original Dovecot configuration file
+  command: mv /etc/dovecot/dovecot.conf /etc/dovecot/dovecot.conf.ORIG
+  args:
+      creates: /etc/dovecot/dovecot.conf.ORIG
+
+- name: Add new Dovecot configuration file
+  template: src=postfix-main.cf.j2 dest=/etc/postfix/main.cf
+  tags: dovecot
+
+- name: Create virtual mailboxes directory
+  file:
+    path: /home/mail/vhosts/
+    state: directory
+    owner: 5000
+    group: 5000
+    mode: 0770
+
+- name: Create Postfix lookup table for unix users
+  command: postmap /etc/postfix/virtual
+  args:
+      creates: /etc/postfix/virtual
+  notify: "restart mail services"
+
+- name: Create Postfix lookup table for virtual mailboxes
+  command: postmap /etc/postfix/vmailbox
+  args:
+      creates: /etc/postfix/vmailbox
+  notify: "restart mail services"
+
+- name: Setup firewall for the mail services
+  ufw: name={{ item }} rule=allow state=enabled
+  with_items:
+    - 'Postfix'
+    - 'Postfix SMTPS'
+    - 'Postfix Submission'
+    - 'Dovecot IMAP'
+    - 'Dovecot Secure IMAP'
+
+
+#  For later use, maybe?
+# - name: Check if port 80 is allowed
+#   shell: iptables -L | grep -q "Allow http" && echo -n yes || echo -n no
+#   register: check_allow_http
+#   changed_when: no
+#   always_run: yes
+#
+# - name: Allow port 80
+#   command: >
+#     iptables -A INPUT -p tcp -m tcp --dport 80
+#     -m comment --comment "Allow http" -j ACCEPT
+#   when: check_allow_http.stdout == "no"
+#   notify:
+#   - Save iptables

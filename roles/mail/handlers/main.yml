@@ -1,3 +1,11 @@
 ---
 - name: stop postfix
-  service: name=sshd state=restarted
+  shell: postfix stop
+
+- name: restart postfix
+  shell: postfix reload
+  listen: "restart mail services"
+
+- name: restart dovecot
+  service: name=dovecot state=restarted
+  listen: "restart mail services"

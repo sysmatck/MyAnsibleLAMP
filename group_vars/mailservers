@@ -1,0 +1,4 @@
+---
+# The variables file used by the playbooks in the mailservers group.
+
+mailserver_domain: mail.mydomain.com
